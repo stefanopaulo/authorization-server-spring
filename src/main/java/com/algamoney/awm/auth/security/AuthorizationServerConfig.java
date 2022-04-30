@@ -3,6 +3,7 @@ package com.algamoney.awm.auth.security;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +17,7 @@ import org.springframework.security.oauth2.config.annotation.web.configurers.Aut
 import org.springframework.security.oauth2.provider.CompositeTokenGranter;
 import org.springframework.security.oauth2.provider.TokenGranter;
 import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
 
 @Configuration
@@ -75,7 +77,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 			.authenticationManager(authenticationManager)
 			.userDetailsService(userDetailsService)
 			.reuseRefreshTokens(false)
-			.tokenStore(redisTokenStore())
+			.accessTokenConverter(jwtAccessTokenConverter())
 			.tokenGranter(tokenGranter(endpoints));
 	}
 
@@ -83,6 +85,15 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
 		security.checkTokenAccess("permitAll()")
 				.allowFormAuthenticationForClients();
+	}
+	
+	@Bean
+	public JwtAccessTokenConverter jwtAccessTokenConverter() {
+		JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+		
+		jwtAccessTokenConverter.setSigningKey("algamoney");
+		
+		return jwtAccessTokenConverter;
 	}
 	
 	private TokenGranter tokenGranter(AuthorizationServerEndpointsConfigurer endpoints) {
@@ -94,10 +105,6 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 				pkceAuthorizationCodeTokenGranter, endpoints.getTokenGranter());
 		
 		return new CompositeTokenGranter(granters);
-	}
-	
-	private TokenStore redisTokenStore() {
-		return new RedisTokenStore(redisConnectionFactory);
 	}
 
 }
